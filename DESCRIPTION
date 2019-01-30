@@ -1,0 +1,19 @@
+Package: BCB420.2019.SMART
+Type: Package
+Title: BCB420 package for SMART
+Version: 0.1.0
+Date: 2019-01-29
+Authors@R: c(
+    person("Boris", "Steipe", email = "boris.steipe@utoronto.ca", role = c("ctb"), comment = c(ORCID = "0000-0002-1134-6758")),
+    person("Fan", "Shen", email = "van.shen@mail.utoronto.ca", role = c("aut","cre"), comment = c(ORCID = "0000-0001-8720-5874"))
+    )
+Description: DRAFT: This package is going to deal with the data in SMART, which can ouput the 
+             domains in a gene. Importing the chosen data in platform-independent function
+             calls, cleaning it up where necessary, and normalizing its identifiers to HuGO
+             gene symbols. Report data statistics of SMART and velidate the import process.
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+Suggests:
+    testthat
+RoxygenNote: 6.1.1
