@@ -814,14 +814,155 @@ myXset <- read.delim(system.file("extdata",
 To validate the import process, we get the domain, symbol and uniprot ID from HGNC and go to SMART website to check if the gene has the domain.
 
 ```R
-# Check some of the genes.
-names(store)[1] # "VPS11"
-HGNC$UniProtID[HGNC$sym == names(store)[1]] #"Q9H270"
-store[[1]]
-# [1] "E3 ubiquitin-protein ligase activity is intrinsic to the RING domain of c-Cbl and is likely to be a general function of this domain; Various RING fingers exhibit binding activity towards E2 ubiquitin-conjugating enzymes (Ubc' s)"
-```
-Then go to (SMART)[http://smart.embl-heidelberg.de/] check if the gene with uniprot ID have the same domain description. This example is true. More could be tested.
+myMart <- biomaRt::useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
+# Example code to get the list of filters, attributes and look for correct ones
+filters <- biomaRt::listFilters(myMart)
+filters[grep("SMART", filters$description), ]
+
+attributes <- biomaRt::listAttributes(myMart)
+attributes[grep("sequence", attributes$page, ignore.case=TRUE), ]
+
+tmp <- biomaRt::getBM(filters = "with_smart",
+                      attributes = c("hgnc_symbol",
+                                     "smart",
+                                     "smart_start",
+                                     "smart_end",
+                                     "transcript_appris",
+                                     "ensembl_peptide_id"),
+                      values = TRUE,
+                      mart = myMart)
+                      
+# Clean up the data as before
+tmp <- tmp[grepl("^principal", tmp$transcript_appris),]
+tmp <- tmp[tmp$hgnc_symbol != "",]
+
+set.seed(410420)
+testSet <- sample(tmp$hgnc_symbol, 10)
+for (i in seq_along(testSet)) {
+  if (sum(tmp$hgnc_symbol == testSet[i]) >20) {
+    testSet[i] <- NA
+  }
+}
+for(gene in testSet){
+  if (! is.na(gene)) {
+    print(unique(tmp[tmp$hgnc_symbol == gene,c(2,3,4,6)]))
+  }
+}
+```
+&nbsp;
+
+The output is:
+
+```text
+        smart smart_start smart_end ensembl_peptide_id
+57961 SM00112         376       458    ENSP00000231484
+57962 SM00112         157       242    ENSP00000231484
+57963 SM00112         621       704    ENSP00000231484
+57964 SM00112         266       350    ENSP00000231484
+57965 SM00112         482       563    ENSP00000231484
+57966 SM00112          36       133    ENSP00000231484
+         smart smart_start smart_end ensembl_peptide_id
+122570 SM00295        1795      2012    ENSP00000386461
+122571 SM00295        1193      1412    ENSP00000386461
+122572 SM00139        1644      1793    ENSP00000386461
+122573 SM00139         989      1192    ENSP00000386461
+122574 SM00015         785       807    ENSP00000386461
+122575 SM00015         762       784    ENSP00000386461
+122576 SM00015         854       876    ENSP00000386461
+122577 SM00015         831       853    ENSP00000386461
+122578 SM00326        1504      1566    ENSP00000386461
+122579 SM00242          59       761    ENSP00000386461
+122584 SM00295        1795      2012    ENSP00000415090
+122585 SM00295        1193      1412    ENSP00000415090
+122586 SM00139        1644      1793    ENSP00000415090
+122587 SM00139         989      1192    ENSP00000415090
+122588 SM00015         785       807    ENSP00000415090
+122589 SM00015         762       784    ENSP00000415090
+122590 SM00015         854       876    ENSP00000415090
+122591 SM00015         831       853    ENSP00000415090
+122592 SM00326        1504      1566    ENSP00000415090
+122593 SM00242          59       761    ENSP00000415090
+        smart smart_start smart_end ensembl_peptide_id
+57435 SM00054         819       847    ENSP00000317997
+57436 SM00054         855       883    ENSP00000317997
+57437 SM00054         819       847    ENSP00000373689
+57438 SM00054         855       883    ENSP00000373689
+        smart smart_start smart_end ensembl_peptide_id
+48161 SM00349           4        64    ENSP00000395733
+48162 SM00355         341       363    ENSP00000395733
+48163 SM00355         313       335    ENSP00000395733
+48164 SM00355         369       391    ENSP00000395733
+48165 SM00355         509       531    ENSP00000395733
+48166 SM00355         285       307    ENSP00000395733
+48167 SM00355         425       447    ENSP00000395733
+48168 SM00355         397       419    ENSP00000395733
+48169 SM00355         201       223    ENSP00000395733
+48170 SM00355         453       475    ENSP00000395733
+48171 SM00355         481       503    ENSP00000395733
+48172 SM00355         257       279    ENSP00000395733
+48173 SM00355         173       195    ENSP00000395733
+48174 SM00355         229       251    ENSP00000395733
+```
+&nbsp;
+
+Then go to [SMART](http://smart.embl-heidelberg.de/) check if the gene with uniprot ID have the same domain description and start and end.
+
+For example search for first gene with peptide id `ENSP00000231484`:
+![](./inst/img/exampleSmart.png?sanitize=true "exammple smart screenshot")
+We can tell that the start and end of the domains are same as what we get from biomaRt and in the page, we can tell the ID of the domain name is same as `SM00112`.
+
+&nbsp;
+
+I also check other symbols, the start and end of the domains are same. However, generally, SMART website will produce more domains including `low complexity`.
+
+&nbsp;
+
+To further check if the sequence are correct. I get the transcript sequence from biomaRt and check it to SMART website.
+
+```R
+#        smart smart_start smart_end ensembl_peptide_id
+#57961 SM00112         376       458    ENSP00000231484
+#57962 SM00112         157       242    ENSP00000231484
+#57963 SM00112         621       704    ENSP00000231484
+#57964 SM00112         266       350    ENSP00000231484
+#57965 SM00112         482       563    ENSP00000231484
+#57966 SM00112          36       133    ENSP00000231484
+
+# Use the above symbol as example, we can tell the peptide id, the start and end
+test <- biomaRt::getBM(filters = "ensembl_peptide_id",
+                      attributes = c("peptide",
+                                     "ensembl_peptide_id"),
+                      values = "ENSP00000231484",
+                      mart = myMart)
+                      
+seq <- test$peptide
+substring(seq, 36, 133)
+# [1] "VSEEVPSGTVIGKLSQELGREERRRQAGAAFQVLQLPQALPIQVDSEEGLLSTGRRLDREQLCRQWDPCLVSFDVLATGDLALIHVEIQVLDINDHQP"
+
+# Then we go to the smart website page again and serch for the peptide id
+# The domain seq from 36 to 133:
+# VSEEVPSGTVIGKLSQELGREERRRQAGAAFQVLQLPQALPIQVDSEEGLLSTGRRLDRE
+#QLCRQWDPCLVSFDVLATGDLALIHVEIQVLDINDHQP
+
+# Since the seq is short, we can tell by eye that they are same.
+
+# More test:
+substring(seq, 157, 242)
+#[1] "DRALDPDTGPNTLHTYTLSPSEHFALDVIVGPDETKHAELIVVKELDREIHSFFDLVLTAYDNGNPPKSGTSLVKVNVLDSNDNSP"
+
+# DRALDPDTGPNTLHTYTLSPSEHFALDVIVGPDETKHAELIVVKELDREIHSFFDLVLTA
+#YDNGNPPKSGTSLVKVNVLDSNDNSP
+
+
+substring(seq, 376, 458)
+#[1] "VMADDLDSGHNGLVHCWLSQELGHFRLKRTNGNTYMLLTNATLDREQWPKYTLTLLAQDQGLQPLSAKKQLSIQISDINDNAP"
+
+# VMADDLDSGHNGLVHCWLSQELGHFRLKRTNGNTYMLLTNATLDREQWPKYTLTLLAQDQ
+#GLQPLSAKKQLSIQISDINDNAP
+
+```
+THE END of Validation!!!
 &nbsp;
 
 ----
