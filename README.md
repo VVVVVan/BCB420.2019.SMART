@@ -32,8 +32,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;5.2 Load smart2sym map and simple domain statistics<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;5.3 Load sym2smart map and simple gene statistics<br/>
 6. Annotating example gene sets with SMART Data <br/>
-4. Notes<br/>
-5. Acknowledgements<br/>
+7. Validate import process<br/>
+8. Notes<br/>
+9. Reference<br/>
+10. Acknowledgements<br/>
 <!-- TOCabove -->
 
 ----
@@ -61,26 +63,25 @@ In this project:
    |__DESCRIPTION
    |__inst/
       |__dev/
-         |__functionTemplate.R
          |__rptTwee.R
+         |__toBrowser.R
       |__extdata/
-         |__test_lseq.dat
+         |__results.tsv
+         |__smart2sym.RData
+         |__sym2smart.RData
+      |__img/       # Store images
       |__scripts/
          |__scriptTemplate.R
-         |__toBrowser.R
    |__LICENSE
    |__man/
-      |__lseq.Rd
    |__NAMESPACE
    |__R/
-      |__lseq.R
       |__zzz.R
    |__README.md
    |__tests/
       |__testthat.R
       |__testthat/
          |__helper-functions.R
-         |__test_lseq.R
 ```
 
 &nbsp;
@@ -776,20 +777,45 @@ cat(sprintf("\t%s\t(%s, %s)\n", HGNC[xSet[x], "sym"], HGNC[xSet[x], "name"],HGNC
 library(httr)
 sel <- which(names(symDomains) %in% xSet)
 
+store <- list()
+
 for (sym in sel) {
   domains <- symDomains[[sym]]
   for (domain in domains) {
-    tmp$Description[tmp$ID == domain]
+    store[[names(symDomains)[sym]]] <- c(store[[names(symDomains)[sym]]],
+                                        tmp$Description[tmp$ID == domain])
   }
 }
 
+writeLines(c("symobl\tDescription",
+             sprintf("%s\t%s\t", names(store), store)),
+           con = "inst/extdata/results.tsv")
+           
+# The data set can be read back in again (in an RStudio session) with
+myXset <- read.delim(file.path("inst", "extdata", "results.tsv"),
+                     stringsAsFactors = FALSE)
+
+# From an installed package, the command would be:
+myXset <- read.delim(system.file("extdata",
+                                  "results.tsv",
+                                  package = "BCB420.2019.SMART"),
+                     stringsAsFactors = FALSE)
 ```
 &nbsp;
 
 ----
 
 # 7 Validate import process
-To validate the import process, we use biomaRt to retrive data, including HGNC symbol, SMART domain IDs, SMART start, SMART end, APPRIS annotation, Uniprot IDs, Protein stable ID, peptide sequence.
+To validate the import process, we get the domain, symbol and uniprot ID from HGNC and go to SMART website to check if the gene has the domain.
+
+```R
+# Check some of the genes.
+names(store)[1] # "VPS11"
+HGNC$UniProtID[HGNC$sym == names(store)[1]] #"Q9H270"
+store[[1]]
+# [1] "E3 ubiquitin-protein ligase activity is intrinsic to the RING domain of c-Cbl and is likely to be a general function of this domain; Various RING fingers exhibit binding activity towards E2 ubiquitin-conjugating enzymes (Ubc' s)"
+```
+Then go to (SMART)[http://smart.embl-heidelberg.de/] check if the gene with uniprot ID have the same domain description. This example is true. More could be tested.
 
 &nbsp;
 
@@ -819,7 +845,7 @@ The HGNC symbol data and example genes are get from [Prof Steipe, BCB420.2019.Re
 &nbsp;
 ----
 
-# 5 Acknowledgements
+# 10 Acknowledgements
 
 &nbsp;
 ----
