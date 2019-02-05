@@ -583,6 +583,9 @@ tmp <- tmp[-1,]
 colnames(tmp) <- c("name", "ID", "Definition", "Description")
 rownames(tmp) <- c(seq(1,nrow(tmp)))
 
+storedDefinition <- tmp
+save(storedDefinition, file = file.path("inst", "extdata", "storedDefinition.RData"))
+
 # There are some domains do not have definition or description
 sum(tmp$Definition == "") # 202
 sum(tmp$Description == "") # 337
@@ -779,11 +782,13 @@ sel <- which(names(symDomains) %in% xSet)
 
 store <- list()
 
+load(file = file.path("inst", "extdata", "storedDefinition.RData"))
+
 for (sym in sel) {
   domains <- symDomains[[sym]]
   for (domain in domains) {
     store[[names(symDomains)[sym]]] <- c(store[[names(symDomains)[sym]]],
-                                        tmp$Description[tmp$ID == domain])
+                 storedDefinition$Description[storedDefinition$ID == domain])
   }
 }
 
