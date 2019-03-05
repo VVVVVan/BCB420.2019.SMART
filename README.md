@@ -670,7 +670,7 @@ for(i in indexes) {
 symDomains[["NotMapped"]] <- NULL
 
 # Save it
-save(symDomains, file = file.path("..", "data", "symDomains.RData"))
+save(symDomains, file = file.path("inst", "extdata", "symDomains.RData"))
 
 # Coverage of human protein genes
 length(names(symDomains)) * 100 / sum(HGNC$type == "protein") # 51.10%
@@ -788,21 +788,39 @@ for (sym in sel) {
   domains <- symDomains[[sym]]
   for (domain in domains) {
     store[[names(symDomains)[sym]]] <- c(store[[names(symDomains)[sym]]],
+                 storedDefinition$Definition[storedDefinition$ID == domain],
                  storedDefinition$Description[storedDefinition$ID == domain])
   }
 }
 
-writeLines(c("symobl\tDescription",
-             sprintf("%s\t%s\t", names(store), store)),
-           con = "inst/extdata/results.tsv")
+domainsOut <- data.frame(symbol = character(),
+                         Definition = character(),
+                         Description = character(),
+                         stringsAsFactors = FALSE)
+for (i in seq_along(store)) {
+  for (j in seq_along(store[[i]])) {
+    if (j%%2 == 1) {
+      add <- data.frame(symbol = names(store)[i],
+                        Definition = store[[i]][j],
+                        Description = store[[i]][j+1],
+                        stringsAsFactors = FALSE)
+      domainsOut <- rbind(domainsOut,add)
+    }
+  }
+}
+
+
+writeLines(c("symobl\tDefinition\tDescription",
+             sprintf("%s\t%s\t%s\t", domainsOut[,1], domainsOut[,2], domainsOut[,3])),
+           con = "inst/extdata/domains.tsv")
            
 # The data set can be read back in again (in an RStudio session) with
-myXset <- read.delim(file.path("inst", "extdata", "results.tsv"),
+myXset <- read.delim(file.path("inst", "extdata", "domains.tsv"),
                      stringsAsFactors = FALSE)
 
 # From an installed package, the command would be:
 myXset <- read.delim(system.file("extdata",
-                                  "results.tsv",
+                                  "domains.tsv",
                                   package = "BCB420.2019.SMART"),
                      stringsAsFactors = FALSE)
 ```
