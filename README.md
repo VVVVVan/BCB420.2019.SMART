@@ -66,9 +66,11 @@ In this project:
          |__rptTwee.R
          |__toBrowser.R
       |__extdata/
-         |__results.tsv
+         |__domains.tsv
          |__smart2sym.RData
+         |__storedDefinition.RData
          |__sym2smart.RData
+         |__symDomains.RData
       |__img/       # Store images
       |__scripts/
          |__scriptTemplate.R
